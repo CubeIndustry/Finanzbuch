@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finanzbuch</title>
+    <link rel="icon" href="C:\Users\Nai06\Pictures\Saved Pictures\coin-stack_11162423.ico" type="image/x-icon">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
+        h2 { text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        form { display: flex; gap: 10px; margin-bottom: 20px; }
+        input, select, button { padding: 8px; font-size: 16px; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { border: 1px solid black; padding: 10px; text-align: left; }
+        th { background-color: #4CAF50; color: white; }
+        .action-btn { background: none; border: none; cursor: pointer; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h2>
+        <img src="C:\Users\Nai06\Desktop\icon.png" alt="Icon" width="45" height="45">
+        Finanzbuch
+    </h2>
+    <form onsubmit="addEntry(event)">
+        <input type="hidden" id="edit-bestellnummer">
+        <input type="text" id="name" placeholder="Name" required>
+        <input type="text" id="bestellung" placeholder="Bestellung" required>
+        <select id="typ">
+            <option value="Ankauf">Ankauf</option>
+            <option value="Verkauf">Verkauf</option>
+        </select>
+        <input type="number" id="kosten" placeholder="Kosten" required>
+        <button type="submit">Hinzufügen</button>
+    </form>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Bestellung</th>
+                <th>Typ</th>
+                <th>Kosten</th>
+                <th>Bestellnummer</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="entries"></tbody>
+    </table>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", loadEntries);
+
+        function generateOrderNumber() {
+            const now = new Date();
+            return `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
+        }
+
+        function addEntry(event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+            const bestellung = document.getElementById('bestellung').value;
+            const typ = document.getElementById('typ').value;
+            const kosten = document.getElementById('kosten').value;
+            const editBestellnummer = document.getElementById('edit-bestellnummer').value;
+            
+            let entries = JSON.parse(localStorage.getItem('entries')) || [];
+            if (editBestellnummer) {
+                let entryIndex = entries.findIndex(entry => entry.bestellnummer === editBestellnummer);
+                if (entryIndex !== -1) {
+                    entries[entryIndex] = { name, bestellung, typ, kosten, bestellnummer: editBestellnummer };
+                }
+            } else {
+                const bestellnummer = generateOrderNumber();
+                entries.push({ name, bestellung, typ, kosten, bestellnummer });
+            }
+            localStorage.setItem('entries', JSON.stringify(entries));
+            
+            document.getElementById('edit-bestellnummer').value = "";
+            renderEntries();
+            document.querySelector('form').reset();
+        }
+
+        function deleteEntry(bestellnummer) {
+            let entries = JSON.parse(localStorage.getItem('entries')) || [];
+            entries = entries.filter(entry => entry.bestellnummer !== bestellnummer);
+            localStorage.setItem('entries', JSON.stringify(entries));
+            renderEntries();
+        }
+
+        function editEntry(bestellnummer) {
+            let entries = JSON.parse(localStorage.getItem('entries')) || [];
+            let entry = entries.find(entry => entry.bestellnummer === bestellnummer);
+            if (entry) {
+                document.getElementById('name').value = entry.name;
+                document.getElementById('bestellung').value = entry.bestellung;
+                document.getElementById('typ').value = entry.typ;
+                document.getElementById('kosten').value = entry.kosten;
+                document.getElementById('edit-bestellnummer').value = entry.bestellnummer;
+            }
+        }
+
+        function renderEntries() {
+            const table = document.getElementById('entries');
+            table.innerHTML = '';
+            let entries = JSON.parse(localStorage.getItem('entries')) || [];
+            entries.forEach(entry => {
+                const row = table.insertRow();
+                row.innerHTML = `
+                    <td>${entry.name}</td>
+                    <td>${entry.bestellung}</td>
+                    <td>${entry.typ}</td>
+                    <td>${entry.kosten}</td>
+                    <td>${entry.bestellnummer}</td>
+                    <td>
+                        <button class="action-btn" onclick="editEntry('${entry.bestellnummer}')">✏️</button>
+                        <button class="action-btn" onclick="deleteEntry('${entry.bestellnummer}')">❌</button>
+                    </td>
+                `;
+            });
+        }
+
+        function loadEntries() {
+            renderEntries();
+        }
+    </script>
+</body>
+</html>
